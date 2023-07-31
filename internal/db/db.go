@@ -5,12 +5,13 @@ package db
 import (
 	"context"
 	"fmt"
-	"lixIQ/backend/internal/config"
 	"lixIQ/backend/internal/controllers"
 	"lixIQ/backend/internal/routes"
 	"lixIQ/backend/internal/services"
 	"log"
+	"os"
 
+	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
@@ -32,14 +33,15 @@ var (
 )
 
 func init() {
-	config, err := config.LoadConfig("../")
+	err := godotenv.Load()
+	// config, err := config.LoadConfig("../")
 	if err != nil {
 		log.Fatal("Could not load environment variables", err)
 	}
 
 	ctx = context.TODO()
 
-	mongoconn := options.Client().ApplyURI(config.DBUri)
+	mongoconn := options.Client().ApplyURI(os.Getenv("MONGO_URI"))
 	mongoclient, err := mongo.Connect(ctx, mongoconn)
 
 	if err != nil {

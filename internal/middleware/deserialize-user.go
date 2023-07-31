@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"fmt"
-	"lixIQ/backend/internal/config"
 	"lixIQ/backend/internal/services"
 	"lixIQ/backend/internal/utils"
 	"net/http"

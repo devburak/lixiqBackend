@@ -4,7 +4,6 @@ package main
 
 import (
 	"context"
-	"lixIQ/backend/internal/config"
 	"lixIQ/backend/internal/controllers"
 	"lixIQ/backend/internal/routes"
 	"lixIQ/backend/internal/services"
