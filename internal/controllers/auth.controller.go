@@ -2,12 +2,13 @@ package controllers
 
 import (
 	"fmt"
-	"lixIQ/backend/internal/config"
 	"lixIQ/backend/internal/models"
 	"lixIQ/backend/internal/services"
 	"lixIQ/backend/internal/utils"
 	"net/http"
+	"os"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -72,10 +73,17 @@ func (ac *AuthController) SignInUser(ctx *gin.Context) {
 		return
 	}
 
-	config, _ := config.LoadConfig(".")
+	// config, _ := config.LoadConfig(".")
+
+	ACCESSTOKENEXPIREDIN := "15m"
+	ACCESSTOKENEXPIREDIN = os.Getenv("ACCESS_TOKEN_EXPIRED_IN")
+	duration, err := time.ParseDuration(ACCESSTOKENEXPIREDIN)
+	// if present {
+	// 	ACCESSTOKENEXPIREDIN,err = strconv.Atoi(value)
+	// }
 
 	// Generate Tokens
-	access_token, err := utils.CreateToken(config.AccessTokenExpiresIn, user.ID, config.AccessTokenPrivateKey)
+	access_token, err := utils.CreateToken(duration, user.ID, os.Getenv("AccessTokenPrivateKey"))
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": err.Error()})
 		return
