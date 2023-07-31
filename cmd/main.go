@@ -3,18 +3,55 @@
 package main
 
 import (
-	"lixIQ/backend/internal/db"
+	"context"
+	"lixIQ/backend/internal/config"
+	"lixIQ/backend/internal/controllers"
+	"lixIQ/backend/internal/routes"
+	"lixIQ/backend/internal/services"
+	"log"
+	"net/http"
+
+	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/mongo"
+)
+
+var (
+	server      *gin.Engine
+	ctx         context.Context
+	mongoclient *mongo.Client
+
+	userService         services.UserService
+	UserController      controllers.UserController
+	UserRouteController routes.UserRouteController
+
+	AuthController      controllers.AuthController
+	AuthRouteController routes.AuthRouteController
 )
 
 func main() {
-	// MongoDB bağlantısını yapın
-	// db.Init() otomatik olarak yapılacaktır
+	config, err := config.LoadConfig("../")
 
-	// Bağlantıyı kapatın (işiniz bittiğinde)
-	defer db.Close()
+	if err != nil {
+		log.Fatal("Could not load config", err)
+	}
 
-	// MongoDB veritabanı ve koleksiyon işlemleri burada yapılabilir
-	db.GetDatabase().Collection("user")
+	defer mongoclient.Disconnect(ctx)
 
-	// fmt.Println("MongoDB bağlantısı başarıyla yapıldı!")
+	corsConfig := cors.DefaultConfig()
+	corsConfig.AllowOrigins = []string{"http://localhost:8000", "http://localhost:3000"}
+	corsConfig.AllowCredentials = true
+
+	server = gin.Default()
+	server.Use(cors.New(corsConfig))
+
+	router := server.Group("/api")
+	router.GET("/healthchecker", func(ctx *gin.Context) {
+		value := "Success message"
+		ctx.JSON(http.StatusOK, gin.H{"status": "success", "message": value})
+	})
+
+	AuthRouteController.AuthRoute(router, userService)
+	UserRouteController.UserRoute(router, userService)
+	log.Fatal(server.Run(":" + config.Port))
 }

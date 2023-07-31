@@ -5,52 +5,68 @@ package db
 import (
 	"context"
 	"fmt"
+	"lixIQ/backend/internal/config"
+	"lixIQ/backend/internal/controllers"
+	"lixIQ/backend/internal/routes"
+	"lixIQ/backend/internal/services"
 	"log"
-	"os"
 
-	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
-var client *mongo.Client
-var database *mongo.Database
+var (
+	mongoClient *mongo.Client
+	database    *mongo.Database
+	ctx         context.Context
+
+	userService         services.UserService
+	UserController      controllers.UserController
+	UserRouteController routes.UserRouteController
+
+	authCollection      *mongo.Collection
+	authService         services.AuthService
+	AuthController      controllers.AuthController
+	AuthRouteController routes.AuthRouteController
+)
 
 func init() {
-	err := godotenv.Load()
+	config, err := config.LoadConfig("../")
 	if err != nil {
-		fmt.Println("Error loading .env file:", err)
+		log.Fatal("Could not load environment variables", err)
 	}
 
-	// .env get MONGO URI
-	mongoURI := os.Getenv("MONGO_URI")
-	mongoDBName := os.Getenv("MONGO_DB_NAME")
-	if mongoURI == "" {
-		log.Fatal("MONGO_URI is not set in .env file")
-	}
+	ctx = context.TODO()
 
-	// MongoDB connection created
-	clientOptions := options.Client().ApplyURI(mongoURI) // MongoDB URL'nizi burada belirtin
+	mongoconn := options.Client().ApplyURI(config.DBUri)
+	mongoclient, err := mongo.Connect(ctx, mongoconn)
 
-	client, err := mongo.Connect(context.Background(), clientOptions)
 	if err != nil {
-		log.Fatalf("Failed to connect to MongoDB: %s", err)
+		panic(err)
 	}
 
-	// MongoDB ping status
-	err = client.Ping(context.Background(), nil)
-	if err != nil {
-		log.Fatalf("Failed to ping MongoDB: %s", err)
+	if err := mongoclient.Ping(ctx, readpref.Primary()); err != nil {
+		panic(err)
 	}
 
-	database = client.Database(mongoDBName) // MongoDB veritabanı adınızı buraya yazın
+	fmt.Println("MongoDB successfully connected...")
 
-	fmt.Printf("connection is OK")
+	// Collections
+	authCollection = mongoclient.Database("golang_mongodb").Collection("users")
+	userService = services.NewUserServiceImpl(authCollection, ctx)
+	authService = services.NewAuthService(authCollection, ctx)
+	AuthController = controllers.NewAuthController(authService, userService)
+	AuthRouteController = routes.NewAuthRouteController(AuthController)
+
+	UserController = controllers.NewUserController(userService)
+	UserRouteController = routes.NewRouteUserController(UserController)
+
 }
 
 func Close() {
-	if client != nil {
-		client.Disconnect(context.Background())
+	if mongoClient != nil {
+		mongoClient.Disconnect(context.Background())
 	}
 }
 
