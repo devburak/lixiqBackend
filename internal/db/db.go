@@ -8,10 +8,8 @@ import (
 	"lixIQ/backend/internal/controllers"
 	"lixIQ/backend/internal/routes"
 	"lixIQ/backend/internal/services"
-	"log"
-	"os"
+	"lixIQ/backend/internal/utils"
 
-	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
@@ -33,15 +31,12 @@ var (
 )
 
 func init() {
-	err := godotenv.Load()
-	// config, err := config.LoadConfig("../")
-	if err != nil {
-		log.Fatal("Could not load environment variables", err)
-	}
+
+	var appConfig = utils.LoadConfig()
 
 	ctx = context.TODO()
 
-	mongoconn := options.Client().ApplyURI(os.Getenv("MONGO_URI"))
+	mongoconn := options.Client().ApplyURI(appConfig.MongoUri)
 	mongoclient, err := mongo.Connect(ctx, mongoconn)
 
 	if err != nil {
@@ -55,7 +50,7 @@ func init() {
 	fmt.Println("MongoDB successfully connected...")
 
 	// Collections
-	authCollection = mongoclient.Database("golang_mongodb").Collection("users")
+	authCollection = mongoclient.Database(appConfig.MongoDbName).Collection("users")
 	userService = services.NewUserServiceImpl(authCollection, ctx)
 	authService = services.NewAuthService(authCollection, ctx)
 	AuthController = controllers.NewAuthController(authService, userService)
