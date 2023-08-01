@@ -46,7 +46,7 @@ func LoadConfig() *AppConfig {
 	}
 
 	return &AppConfig{
-		MongoUri:               os.Getenv("MONGO_URI"),
+		MongoUri:               os.Getenv("MONGODB_LOCAL_URI"),
 		MongoDbName:            os.Getenv("MONGO_DB_NAME"),
 		Port:                   os.Getenv("PORT"),
 		AccessTokenPrivateKey:  os.Getenv("ACCESS_TOKEN_PRIVATE_KEY"),

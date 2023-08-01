@@ -30,7 +30,6 @@ var (
 )
 
 func main() {
-
 	defer mongoclient.Disconnect(ctx)
 
 	corsConfig := cors.DefaultConfig()
