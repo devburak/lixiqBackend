@@ -7,6 +7,7 @@ import (
 	"lixIQ/backend/internal/controllers"
 	"lixIQ/backend/internal/routes"
 	"lixIQ/backend/internal/services"
+	"lixIQ/backend/internal/utils"
 	"log"
 	"net/http"
 
@@ -29,11 +30,6 @@ var (
 )
 
 func main() {
-	config, err := config.LoadConfig("../")
-
-	if err != nil {
-		log.Fatal("Could not load config", err)
-	}
 
 	defer mongoclient.Disconnect(ctx)
 
@@ -52,5 +48,5 @@ func main() {
 
 	AuthRouteController.AuthRoute(router, userService)
 	UserRouteController.UserRoute(router, userService)
-	log.Fatal(server.Run(":" + config.Port))
+	log.Fatal(server.Run(":" + utils.LoadConfig().Port))
 }
