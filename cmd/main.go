@@ -1,9 +1,8 @@
-// main.go
-
 package main
 
 import (
 	"context"
+	"fmt"
 	"lixIQ/backend/internal/controllers"
 	"lixIQ/backend/internal/routes"
 	"lixIQ/backend/internal/services"
@@ -14,6 +13,8 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
 var (
@@ -25,27 +26,61 @@ var (
 	UserController      controllers.UserController
 	UserRouteController routes.UserRouteController
 
+	authCollection      *mongo.Collection
+	authService         services.AuthService
 	AuthController      controllers.AuthController
 	AuthRouteController routes.AuthRouteController
 )
 
+func init() {
+	config := utils.LoadConfig()
+
+	ctx = context.TODO()
+
+	// Connect to MongoDB
+	mongoconn := options.Client().ApplyURI(config.MongoUri)
+	mongoclient, err := mongo.Connect(ctx, mongoconn)
+
+	if err != nil {
+		panic(err)
+	}
+
+	if err := mongoclient.Ping(ctx, readpref.Primary()); err != nil {
+		panic(err)
+	}
+
+	fmt.Println("MongoDB successfully connected...")
+
+	// Collections
+	authCollection = mongoclient.Database("golang_mongodb").Collection("users")
+	userService = services.NewUserServiceImpl(authCollection, ctx)
+	authService = services.NewAuthService(authCollection, ctx)
+	AuthController = controllers.NewAuthController(authService, userService)
+	AuthRouteController = routes.NewAuthRouteController(AuthController)
+
+	UserController = controllers.NewUserController(userService)
+	UserRouteController = routes.NewRouteUserController(UserController)
+
+	server = gin.Default()
+}
+
 func main() {
+	config := utils.LoadConfig()
+
 	defer mongoclient.Disconnect(ctx)
 
 	corsConfig := cors.DefaultConfig()
 	corsConfig.AllowOrigins = []string{"http://localhost:8000", "http://localhost:3000"}
 	corsConfig.AllowCredentials = true
 
-	server = gin.Default()
 	server.Use(cors.New(corsConfig))
 
 	router := server.Group("/api")
 	router.GET("/healthchecker", func(ctx *gin.Context) {
-		value := "Success message"
-		ctx.JSON(http.StatusOK, gin.H{"status": "success", "message": value})
+		ctx.JSON(http.StatusOK, gin.H{"status": "success", "message": "Connected"})
 	})
 
 	AuthRouteController.AuthRoute(router, userService)
 	UserRouteController.UserRoute(router, userService)
-	log.Fatal(server.Run(":" + utils.LoadConfig().Port))
+	log.Fatal(server.Run(":" + config.Port))
 }
