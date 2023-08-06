@@ -1,8 +1,10 @@
 package utils
 
 import (
+	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -28,19 +30,27 @@ func LoadConfig() *AppConfig {
 		log.Fatal("Error loading .env file")
 	}
 
-	accessTokenMaxAge := 15
-	refreshTokenMaxAge := 60
+	accessTokenMaxAge, err := strconv.Atoi(os.Getenv("ACCESS_TOKEN_MAXAGE"))
+	if err != nil {
+		log.Fatal("Invalid value for ACCESS_TOKEN_MAXAGE")
+	}
+	refreshTokenMaxAge, err := strconv.Atoi(os.Getenv("REFRESH_TOKEN_MAXAGE"))
+	if err != nil {
+		log.Fatal("Invalid value for REFRESH_TOKEN_MAXAGE")
+	}
 
 	// Parse the duration values from environment variables
 	accessTokenExpiredInStr := os.Getenv("ACCESS_TOKEN_EXPIRED_IN")
 	refreshTokenExpiredInStr := os.Getenv("REFRESH_TOKEN_EXPIRED_IN")
 
 	accessTokenExpiredIn, err := time.ParseDuration(accessTokenExpiredInStr)
+	fmt.Println("access token expired in", accessTokenExpiredIn)
 	if err != nil {
 		log.Fatal("Invalid value for ACCESS_TOKEN_EXPIRED_IN")
 	}
 
 	refreshTokenExpiredIn, err := time.ParseDuration(refreshTokenExpiredInStr)
+	fmt.Println("refresh token expired in", refreshTokenExpiredIn)
 	if err != nil {
 		log.Fatal("Invalid value for REFRESH_TOKEN_EXPIRED_IN")
 	}
