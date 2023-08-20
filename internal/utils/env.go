@@ -22,6 +22,7 @@ type AppConfig struct {
 	RefreshTokenPublicKey  string
 	RefreshTokenExpiredIn  time.Duration
 	RefreshTokenMaxAge     int
+	ConnectionPoolSize 		 int
 }
 
 func LoadConfig() *AppConfig {
@@ -37,6 +38,10 @@ func LoadConfig() *AppConfig {
 	refreshTokenMaxAge, err := strconv.Atoi(os.Getenv("REFRESH_TOKEN_MAXAGE"))
 	if err != nil {
 		log.Fatal("Invalid value for REFRESH_TOKEN_MAXAGE")
+	}
+	connectionPoolSize,err := strconv.Atoi(os.Getenv("CONNECTION_POOL_SIZE"))
+	if err != nil{
+		log.Fatal("Invalid value for connection pool size")
 	}
 
 	// Parse the duration values from environment variables
@@ -67,5 +72,6 @@ func LoadConfig() *AppConfig {
 		RefreshTokenPublicKey:  os.Getenv("REFRESH_TOKEN_PUBLIC_KEY"),
 		RefreshTokenExpiredIn:  refreshTokenExpiredIn,
 		RefreshTokenMaxAge:     refreshTokenMaxAge,
+		ConnectionPoolSize: 		connectionPoolSize,
 	}
 }

@@ -39,6 +39,7 @@ func init() {
 
 	// Connect to MongoDB
 	mongoconn := options.Client().ApplyURI(config.MongoUri)
+	mongoconn.SetMaxPoolSize(uint64(config.ConnectionPoolSize))
 	mongoclient, err := mongo.Connect(ctx, mongoconn)
 
 	if err != nil {
