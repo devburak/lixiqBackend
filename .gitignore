@@ -3,6 +3,3 @@
 # .env 
 .env
 
-# config/ directory
-config/
-internal/config

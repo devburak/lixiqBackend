@@ -1,20 +1,87 @@
-// main.go
-
 package main
 
 import (
-	"lixIQ/backend/internal/db"
+	"context"
+	"fmt"
+	"lixIQ/backend/internal/controllers"
+	"lixIQ/backend/internal/routes"
+	"lixIQ/backend/internal/services"
+	"lixIQ/backend/internal/utils"
+	"log"
+	"net/http"
+
+	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
+var (
+	server      *gin.Engine
+	ctx         context.Context
+	mongoclient *mongo.Client
+
+	userService         services.UserService
+	UserController      controllers.UserController
+	UserRouteController routes.UserRouteController
+
+	authCollection      *mongo.Collection
+	authService         services.AuthService
+	AuthController      controllers.AuthController
+	AuthRouteController routes.AuthRouteController
+)
+
+func init() {
+	config := utils.LoadConfig()
+
+	ctx = context.TODO()
+
+	// Connect to MongoDB
+	mongoconn := options.Client().ApplyURI(config.MongoUri)
+	mongoconn.SetMaxPoolSize(uint64(config.ConnectionPoolSize))
+	mongoclient, err := mongo.Connect(ctx, mongoconn)
+
+	if err != nil {
+		panic(err)
+	}
+
+	if err := mongoclient.Ping(ctx, readpref.Primary()); err != nil {
+		panic(err)
+	}
+
+	fmt.Println("MongoDB successfully connected...")
+
+	// Collections
+	authCollection = mongoclient.Database("golang_mongodb").Collection("users")
+	userService = services.NewUserServiceImpl(authCollection, ctx)
+	authService = services.NewAuthService(authCollection, ctx)
+	AuthController = controllers.NewAuthController(authService, userService)
+	AuthRouteController = routes.NewAuthRouteController(AuthController)
+
+	UserController = controllers.NewUserController(userService)
+	UserRouteController = routes.NewRouteUserController(UserController)
+
+	server = gin.Default()
+}
+
 func main() {
-	// MongoDB bağlantısını yapın
-	// db.Init() otomatik olarak yapılacaktır
+	config := utils.LoadConfig()
 
-	// Bağlantıyı kapatın (işiniz bittiğinde)
-	defer db.Close()
+	defer mongoclient.Disconnect(ctx)
 
-	// MongoDB veritabanı ve koleksiyon işlemleri burada yapılabilir
-	db.GetDatabase().Collection("user")
+	corsConfig := cors.DefaultConfig()
+	corsConfig.AllowOrigins = []string{"http://localhost:8000", "http://localhost:3000"}
+	corsConfig.AllowCredentials = true
 
-	// fmt.Println("MongoDB bağlantısı başarıyla yapıldı!")
+	server.Use(cors.New(corsConfig))
+
+	router := server.Group("/api")
+	router.GET("/healthchecker", func(ctx *gin.Context) {
+		ctx.JSON(http.StatusOK, gin.H{"status": "success", "message": "Connected"})
+	})
+
+	AuthRouteController.AuthRoute(router, userService)
+	UserRouteController.UserRoute(router, userService)
+	log.Fatal(server.Run(":" + config.Port))
 }
