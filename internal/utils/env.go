@@ -23,6 +23,10 @@ type AppConfig struct {
 	RefreshTokenExpiredIn  time.Duration
 	RefreshTokenMaxAge     int
 	ConnectionPoolSize     int
+	EmailHost              string
+	EmailFrom              string
+	EmailPassword          string
+	EmailPort              int
 }
 
 func LoadConfig() *AppConfig {
@@ -60,6 +64,14 @@ func LoadConfig() *AppConfig {
 		log.Fatal("Invalid value for REFRESH_TOKEN_EXPIRED_IN")
 	}
 
+	emailHost := os.Getenv("E_MAIL_HOST")
+	emailFrom := os.Getenv("E_MAIL_FROM")
+	emailPassword := os.Getenv("E_MAIL_PASSWORD")
+	emailPort, err := strconv.Atoi(os.Getenv("E_MAIL_PORT"))
+	if err != nil {
+		log.Fatal("Invalid value for E_MAIL_PORT")
+	}
+
 	return &AppConfig{
 		MongoUri:               os.Getenv("MONGODB_LOCAL_URI"),
 		MongoDbName:            os.Getenv("MONGO_DB_NAME"),
@@ -73,5 +85,9 @@ func LoadConfig() *AppConfig {
 		RefreshTokenExpiredIn:  refreshTokenExpiredIn,
 		RefreshTokenMaxAge:     refreshTokenMaxAge,
 		ConnectionPoolSize:     connectionPoolSize,
+		EmailHost:              emailHost,
+		EmailFrom:              emailFrom,
+		EmailPassword:          emailPassword,
+		EmailPort:              emailPort,
 	}
 }

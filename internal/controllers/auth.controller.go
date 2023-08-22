@@ -5,6 +5,7 @@ import (
 	"lixIQ/backend/internal/models"
 	"lixIQ/backend/internal/services"
 	"lixIQ/backend/internal/utils"
+	"log"
 	"net/http"
 	"strings"
 
@@ -13,12 +14,13 @@ import (
 )
 
 type AuthController struct {
-	authService services.AuthService
-	userService services.UserService
+	authService  services.AuthService
+	userService  services.UserService
+	emailService services.EmailService
 }
 
-func NewAuthController(authService services.AuthService, userService services.UserService) AuthController {
-	return AuthController{authService, userService}
+func NewAuthController(authService services.AuthService, userService services.UserService, emailService services.EmailService) AuthController {
+	return AuthController{authService, userService, emailService}
 }
 
 var appConfig = utils.LoadConfig()
@@ -45,6 +47,21 @@ func (ac *AuthController) SignUpUser(ctx *gin.Context) {
 		}
 		ctx.JSON(http.StatusBadGateway, gin.H{"status": "error", "message": err.Error()})
 		return
+	}
+
+	mailData := struct {
+		CreatedDate      string
+		ConfirmationLink string
+	}{
+		CreatedDate:      newUser.CreatedAt.Format("02-01-2006 15:04:05"),
+		ConfirmationLink: "https://lixiq.com/verify?mail=" + newUser.Email,
+	}
+
+	_, err = ac.emailService.SendEmail(newUser.Email, "Welcome to Our Platform", "welcome_mail.html", mailData)
+
+	if err != nil {
+		// E-mail error
+		log.Fatal("Error sending E-mail to confirmation")
 	}
 
 	ctx.JSON(http.StatusCreated, gin.H{"status": "success", "data": gin.H{"user": models.FilteredResponse(newUser)}})
