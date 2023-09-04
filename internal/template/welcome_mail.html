@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to LixIQ</title>
+</head>
+<body>
+    <table width="100%" border="0" cellspacing="0" cellpadding="0" align="center" style="max-width: 600px;">
+        <tr>
+            <td style="padding: 20px; text-align: center; background-color: #f4f4f4;">
+                <h1>Welcome to LixIQ</h1>
+                <p>Thank you for joining us!</p>
+                <p>Your account has been created successfully.</p>
+                <p>Created Date: {{ .CreatedDate }}</p>
+            </td>
+        </tr>
+        <tr>
+            <td style="padding: 20px; text-align: center; background-color: #f4f4f4;">
+                <h2>Confirm Your Email</h2>
+                <p>Click the button below to confirm your email address:</p>
+                <a href="{{ .ConfirmationLink }}" style="display: inline-block; padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none;">Confirm Email</a>
+            </td>
+        </tr>
+        <tr>
+            <td style="padding: 20px; text-align: center; background-color: #f4f4f4;">
+                <p>If you did not register on our website, please disregard this email.</p>
+                <p>&copy; 2023 LixIQ. All rights reserved.</p>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

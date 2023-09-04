@@ -25,11 +25,12 @@ var (
 	userService         services.UserService
 	UserController      controllers.UserController
 	UserRouteController routes.UserRouteController
-
+	emailService        services.EmailService
 	authCollection      *mongo.Collection
 	authService         services.AuthService
 	AuthController      controllers.AuthController
 	AuthRouteController routes.AuthRouteController
+	TestRouteController routes.TestRouteController
 )
 
 func init() {
@@ -51,17 +52,20 @@ func init() {
 	}
 
 	fmt.Println("MongoDB successfully connected...")
+	emailService := services.NewGomailEmailService(config)
+	// emailService = services.NewEmailServiceImpl()
 
 	// Collections
 	authCollection = mongoclient.Database("golang_mongodb").Collection("users")
 	userService = services.NewUserServiceImpl(authCollection, ctx)
 	authService = services.NewAuthService(authCollection, ctx)
-	AuthController = controllers.NewAuthController(authService, userService)
+	AuthController = controllers.NewAuthController(authService, userService, emailService)
 	AuthRouteController = routes.NewAuthRouteController(AuthController)
 
 	UserController = controllers.NewUserController(userService)
 	UserRouteController = routes.NewRouteUserController(UserController)
 
+	TestRouteController = routes.NewTestRouteController(controllers.NewTestController(emailService)) // TestRouteController'ı initialization
 	server = gin.Default()
 }
 
@@ -83,5 +87,7 @@ func main() {
 
 	AuthRouteController.AuthRoute(router, userService)
 	UserRouteController.UserRoute(router, userService)
+	TestRouteController.TestRoute(router, emailService) // Test route'u da ekledik
+
 	log.Fatal(server.Run(":" + config.Port))
 }
